@@ -38,6 +38,6 @@ def extract_frames(video_path, output_folder, frame_rate=1):
 
 
 # Example usage
-video_path = 'C:\project\OKtest.mp4'
-output_folder = 'C:\project\Outputimg'
-extract_frames(video_path, output_folder, frame_rate=1)
+video_path = '/Users/guoyueyao/Desktop/zhaopian/123.mp4'
+output_folder = '/Users/guoyueyao/Desktop/zhaopian'
+extract_frames(video_path, output_folder, frame_rate=5)
