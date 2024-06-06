@@ -1,0 +1,26 @@
+plugins {
+    id 'com.linkedin.python' version '0.7.6'
+}
+
+python {
+    // Define the Python version to use
+    pythonVersion = '3.8' // Change this to your required Python version
+    // Define the source sets
+    sourceSets {
+        main {
+            python {
+                srcDirs = ['src/main/python']
+            }
+        }
+    }
+    // Define the dependencies
+    dependencies {
+        implementation 'opencv-python-headless==4.5.1.48'
+        implementation 'torch==1.8.0'
+        implementation 'torchvision==0.9.0'
+    }
+}
+
+repositories {
+    mavenCentral()
+}
