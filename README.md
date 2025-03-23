@@ -1,5 +1,28 @@
 AI hand recognizer
 
+## 当前进程
+
+功能基本完备，能用了，只需要调优参数就可以达到一个更好的使用体验。
+
+但是问题也就是我没有很好的调优参数，所以点击识别还不是很灵敏
+
+## 使用以及原理说明
+
+venv直接使用我自带的就行
+
+我用的是外置摄像头，故而在24: cap = cv2.VideoCapture(1) 这里设了1。 数字代表着是你电脑里的哪个摄像头，自己调整一下如果报错
+
+手掌深度用的是食指指根和小指指根的距离，这个是用来计算点击识别阈值的。这是一个线性模型，可能（其实确实）很不精确，未来可以考虑用手掌面积换成一个二元模型
+
+滤波使用的是一欧元滤波算法
+
+**所有动作基于右手**
+
+左击：食指指尖和拇指指尖并拢，食指捏住
+右击：小指指尖和拇指指尖并拢，小指捏住
+拖拽：中指指尖和拇指指尖并拢为按下左键，移动改变鼠标位置，再次松开为拖拽结束， 中指捏住
+推出：拇指指尖与小指指根重合，做4的手势就可以
+
 ## 当前不足
 
 点击动作尚不够精准，可以优调threshold中的参数
@@ -30,6 +53,31 @@ AI hand recognizer
 
 
 # English Below
+
+
+## Current Progress
+The functionality is mostly complete and usable. All that's left is to fine-tune the parameters to achieve a better user experience.
+
+The issue, however, is that I haven't done much parameter tuning yet, so click recognition isn't very sensitive at the moment.
+
+## Usage and Explanation of Principles
+You can use the provided virtual environment (venv) directly — no additional setup is needed.
+
+I'm using an external webcam, so in line 24: cap = cv2.VideoCapture(1), the 1 refers to the camera index on your system. You may need to change this number depending on your setup — if it throws an error, try 0 or other values.
+
+For estimating hand depth, I'm using the distance between the base of the index finger and the base of the pinky. This value is used to dynamically calculate the click detection threshold. It's based on a linear model, which is (actually) quite imprecise. In the future, we could consider switching to using palm area and implementing a two-variable model instead.
+
+For smoothing, I'm using the One Euro Filter algorithm.
+
+**All gestures are based on the right hand.**
+
+Left click: Bring the index fingertip and thumb fingertip together (pinch with the index finger).
+
+Right click: Bring the pinky fingertip and thumb fingertip together (pinch with the pinky).
+
+Drag: Pinch with the middle finger and thumb to press the left mouse button, then move your hand to drag the cursor. Releasing ends the drag.
+
+Exit: Bring the thumb fingertip and the base of the pinky together (a "4" gesture) to exit the program.
 
 ## Current Limitations
 The click action is still not accurate enough — the threshold parameters could be further tuned.
