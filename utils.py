@@ -1,4 +1,5 @@
 import numpy as np
+from collections import namedtuple
 
 def find_circle_center(A, B, C):
     """
@@ -63,4 +64,8 @@ def find_circle_center(A, B, C):
         xc, yc = np.linalg.solve(A, b)
 
     return xc, yc
+
+
+
+Point = namedtuple('Point', ['x', 'y'])
 
