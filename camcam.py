@@ -19,11 +19,13 @@ mp_draw = mp.solutions.drawing_utils
 hands = mp_hands.Hands(max_num_hands=1,min_detection_confidence=0.7, min_tracking_confidence=0.7) #最多检测一只手
 
 screen_width, screen_height = pyautogui.size()
+screenScaleW = 1.8
+screenScaleH = 1.8
 cap = cv2.VideoCapture(1)
 
 t0 = time.time()
-xFilter = OneEuroFilter(t0=t0, x0=screen_width / 2, min_cutoff=1.0, beta=0.05)
-yFilter = OneEuroFilter(t0=t0, x0=screen_height / 2, min_cutoff=1.0, beta=0.05)
+xFilter = OneEuroFilter(t0=t0, x0=screen_width / 2, min_cutoff=2.0, beta=0.0)
+yFilter = OneEuroFilter(t0=t0, x0=screen_height / 2, min_cutoff=2.0, beta=0.0)
 
 def set_window_always_on_top(window_name="Hand Tracking Mouse"):
     hwnd = win32gui.FindWindow(None, window_name)
@@ -34,7 +36,7 @@ def set_window_always_on_top(window_name="Hand Tracking Mouse"):
 
 def thresholdCalculation(p1, p2):
     distance = np.linalg.norm(np.array([p1.x,p1.y]) - np.array([p2.x,p2.y]))
-    threshold = distance/4.3 # 基于我食指根部和小指根部自然伸展时的长度比较，不断调整得出
+    threshold = distance/4.1 # 基于我食指根部和小指根部自然伸展时的长度比较，不断调整得出
     logging.debug(f"current threshold base distance is {distance}")
     logging.debug(f"current threshold is: {threshold}")
     return threshold
@@ -65,7 +67,7 @@ def drag(isDragging:bool,firstTip, secondTip, center, draggingThreshold):
             logging.debug(f"current distance is {distance}")
             logging.info("dragging")
     else:
-        mouseMovement(mousePosition(center,screen_height,screen_width,1.8,1.8))
+        mouseMovement(mousePosition(center,screen_height,screen_width,screenScaleW,screenScaleH))
         logging.debug(f"release distance is {distance}")
         if distance > draggingThreshold*1.3:
             pyautogui.mouseUp()
@@ -80,7 +82,7 @@ def close(firstTip, secondTip, closeThreshold):
     else :return False
 
 def mousePosition(center,screenH,screenW, scalingW,scalingH):
-    return utils.Point(center.x * screenW*scalingW - screenW*scalingW/2, center.y * screenH*scalingH -screenH*scalingH/2)
+    return utils.Point(center.x * screenW*scalingW - screenW*(scalingW-1)/2, center.y * screenH*scalingH -screenH*(scalingH-1)/2)
 
 def mouseMovement(mouseCurrentPosition):
     now = time.time()
@@ -151,7 +153,7 @@ while cap.isOpened():
                 isDragging = drag(isDragging,daumen_tip,mittel_tip,palm_wurzel,draggingThreshold= threshould)
                 if not isDragging:
                     # 移动 取食指根部位置
-                    mouseMovement(mousePosition(palm_wurzel,screen_height,screen_width,1.8,1.8))
+                    mouseMovement(mousePosition(palm_wurzel,screen_height,screen_width,screenScaleW,screenScaleH))
                     leftClicked, left_last_click_time = performClick(leftClicked,left_last_click_time,daumen_tip,zeige_tip,clickForm="L", clickThreshold = threshould,clickInterval = 0.5)
                     rightClicked, right_last_click_time = performClick(rightClicked,right_last_click_time,daumen_tip,klein_tip,clickForm="R", clickThreshold = threshould,clickInterval = 0.5)
 
