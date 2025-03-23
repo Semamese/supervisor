@@ -1,59 +1,145 @@
 import cv2
 import  mediapipe as mp
 import pyautogui
+import numpy as np
 import utils
+import logging
+import time
 
+import win32con
+import win32gui
+
+
+logging.basicConfig(level=logging.INFO)
+pyautogui.FAILSAFE = False #限制当鼠标坐标超出屏幕时抛出异常
 
 mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
-hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
+hands = mp_hands.Hands(max_num_hands=1,min_detection_confidence=0.7, min_tracking_confidence=0.7) #最多检测一只手
 
 screen_width, screen_height = pyautogui.size()
-
 cap = cv2.VideoCapture(1)
+
+
+def set_window_always_on_top(window_name="Hand Tracking Mouse"):
+    hwnd = win32gui.FindWindow(None, window_name)
+    if hwnd:
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST,
+                              0, 0, 0, 0,
+                              win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+
+def thresholdCalculation(p1, p2):
+    distance = np.linalg.norm(np.array([p1.x,p1.y]) - np.array([p2.x,p2.y]))
+    threshold = distance/4.5 # 基于我食指根部和小指根部自然伸展时的长度比较，不断调整得出
+    logging.debug(f"current threshold base distance is {distance}")
+    logging.debug(f"current threshold is: {threshold}")
+    return threshold
+
+def performClick(clicked:bool, lastClickTime: float, firstTip, secondTip,clickForm:str, clickThreshold = 0.5, clickInterval = 0.5):
+    distance = np.linalg.norm(np.array([firstTip.x, firstTip.y]) - np.array([secondTip.x, secondTip.y]))
+    logging.debug(f"{clickForm}: {distance}")
+    if distance < clickThreshold and time.time() - lastClickTime > clickInterval:
+        if not clicked:
+            if clickForm == "L":
+                pyautogui.leftClick()
+                logging.info("left clicked")
+            if clickForm == "R":
+                pyautogui.rightClick()
+                logging.info("right clicked")
+            lastClickTime = time.time()
+            clicked = True
+        else:
+            clicked = False
+    return clicked , lastClickTime
+
+def drag(isDragging:bool,firstTip, secondTip, center, draggingThreshold):
+    distance = np.linalg.norm(np.array([firstTip.x, firstTip.y]) - np.array([secondTip.x, secondTip.y]))
+    if not isDragging:
+        if distance < draggingThreshold:
+            pyautogui.mouseDown()
+            isDragging = True
+            logging.debug(f"current distance is {distance}")
+            logging.info("dragging")
+    else:
+        pyautogui.moveTo(mousePosition(center,screen_height,screen_width,1.8,1.8), duration=0.1)
+        logging.debug(f"release distance is {distance}")
+        if distance > draggingThreshold*1.3:
+            pyautogui.mouseUp()
+            isDragging = False
+            logging.info("dragging stopped")
+    return isDragging
+
+def close(firstTip, secondTip, closeThreshold):
+    distance = np.linalg.norm(np.array([firstTip.x, firstTip.y]) - np.array([secondTip.x, secondTip.y]))
+    if distance < closeThreshold:
+        return True
+    else :return False
+
+def mousePosition(center,screenH,screenW, scalingW,scalingH):
+    return center.x * screenW*scalingW - screenW/2, center.y * screenH*scalingH -screenH/2
+# def positionCal(hand_landmarks):
+#     zeige = (hand_landmarks.landmark[5].x * screen_width, hand_landmarks.landmark[5].y * screen_height)
+#     mittel = (hand_landmarks.landmark[9].x * screen_width, hand_landmarks.landmark[9].y * screen_height)
+#     ring = (hand_landmarks.landmark[13].x * screen_width, hand_landmarks.landmark[13].y * screen_height)
+#
+#     # palmCentral_x, palmCentral_y = utils.find_circle_center(zeige,mittel,ring)
+#     return zeige, mittel, ring
+
+
+isDragging = False
+window_set_top = False
+left_last_click_time = 0
+right_last_click_time = 0
+click_interval = 0.5
+leftClicked = False
+rightClicked = False
+shouldClose = False
 
 while cap.isOpened():
     ret, frame = cap.read()
-    if not ret:
+    if not ret: # ret是是否成功接触到帧的bool
         continue
+    cv2.imshow("Hand Tracking Mouse", frame)
 
+    # if not window_set_top:
+    #     set_window_always_on_top("Hand Tracking Mouse")
+    #     window_set_top = True
     frame = cv2.flip(frame, 1)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     results = hands.process(rgb_frame)
 
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
-            mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+    if results.multi_hand_landmarks and results.multi_handedness:
+        for idx, hand_handedness in enumerate(results.multi_handedness): # 实际上只会进行一次循环
+            label = hand_handedness.classification[0].label  # Right Left
+            if label == "Right": # 右手
 
 
-            zeige = (hand_landmarks.landmark[5].x * screen_width,hand_landmarks.landmark[5].y * screen_height)
-            mittel = (hand_landmarks.landmark[9].x * screen_width, hand_landmarks.landmark[9].y * screen_height)
-            ring = (hand_landmarks.landmark[13].x * screen_width, hand_landmarks.landmark[13].y * screen_height)
+                hand_landmarks = results.multi_hand_landmarks[idx]
+                mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            #palmCentral_x, palmCentral_y = utils.find_circle_center(zeige,mittel,ring)
-            # 移动
-            pyautogui.moveTo(hand_landmarks.landmark[5].x* screen_width,hand_landmarks.landmark[5].y* screen_height, duration=0.1)
+                zeige_tip = hand_landmarks.landmark[8]
+                daumen_tip = hand_landmarks.landmark[4]
+                mittel_tip = hand_landmarks.landmark[12]
+                klein_tip = hand_landmarks.landmark[20]
 
-            #大拇指与食指接近
-            zeige_tip = hand_landmarks.landmark[4]
-            daumen_tip = hand_landmarks.landmark[8]
+                zeige_wurzel = hand_landmarks.landmark[5]
+                klein_wurzel = hand_landmarks.landmark[17]
 
-            left_distance = ((daumen_tip.x - zeige_tip.x) ** 2 + (daumen_tip.y - zeige_tip.y) ** 2) ** 0.5
-            if left_distance < 0.005:
-                pyautogui.click()
+                threshould = thresholdCalculation(zeige_wurzel,klein_wurzel)
+                shouldClose = close(daumen_tip,klein_wurzel,threshould)
 
-            klein_tip = hand_landmarks.landmark[20]
-            right_distance = ((daumen_tip.x - klein_tip.x) ** 2 + (daumen_tip.y - klein_tip.y) ** 2) ** 0.5
-            if right_distance < 0.005: pyautogui.rightClick()
+                if shouldClose:
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    exit(1)
 
-            # mittel_tip = hand_landmarks.landmark[12]
-            # middle_distance = ((daumen_tip.x - mittel_tip.x)**2 + (daumen_tip.y - mittel_tip.y)**2) ** 0.5
-            # if middle_distance < 0.05:
-            #     pyautogui.mouseDown()
-            # else:
-            #     pyautogui.mouseUp()
-
+                isDragging = drag(isDragging,daumen_tip,mittel_tip,zeige_wurzel,draggingThreshold= threshould)
+                if not isDragging:
+                    # 移动 取食指根部位置
+                    pyautogui.moveTo(mousePosition(zeige_wurzel,screen_height,screen_width,1.8,1.8), duration=0.1)
+                    leftClicked, left_last_click_time = performClick(leftClicked,left_last_click_time,daumen_tip,zeige_tip,clickForm="L", clickThreshold = threshould,clickInterval = 0.5)
+                    rightClicked, right_last_click_time = performClick(rightClicked,right_last_click_time,daumen_tip,klein_tip,clickForm="R", clickThreshold = threshould,clickInterval = 0.5)
 
     cv2.imshow("Hand Tracking Mouse", frame)
 
@@ -62,3 +148,5 @@ while cap.isOpened():
 
 cap.release()
 cv2.destroyAllWindows()
+
+
