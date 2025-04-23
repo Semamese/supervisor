@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from collections import namedtuple
 
@@ -65,7 +67,15 @@ def find_circle_center(A, B, C):
 
     return xc, yc
 
+def distance(a, b):
+    return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
 
+def area(a, b, c):
+    return 0.5 * abs(
+        a.x * (b.y - c.y) +
+        b.x * (c.y - a.y) +
+        c.x * (a.y - b.y)
+    )
 
 Point = namedtuple('Point', ['x', 'y'])
 

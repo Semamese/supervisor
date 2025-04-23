@@ -3,8 +3,10 @@ import  mediapipe as mp
 import pyautogui
 import numpy as np
 import utils
+from utils import distance,area
 import logging
 import time
+import joblib
 from oneEuroFilter import OneEuroFilter
 
 import win32con
@@ -58,6 +60,25 @@ def performClick(clicked:bool, lastClickTime: float, firstTip, secondTip,clickFo
             clicked = False
     return clicked , lastClickTime
 
+def performClick_Classifier(clicked:bool, lastClickTime: float,leftClickData,clickClassifier,clickForm:str, clickInterval = 0.5):
+    rst = clickClassifier.predict(leftClickData)
+    logging.debug(f"{clickForm}: {rst}")
+    if rst[0] == 1 and time.time() - lastClickTime > clickInterval:
+        if not clicked:
+            if clickForm == "L":
+                pyautogui.leftClick()
+                logging.info("left clicked")
+            if clickForm == "R":
+                pyautogui.rightClick()
+                logging.info("right clicked")
+            lastClickTime = time.time()
+            clicked = True
+        else:
+            clicked = False
+    return clicked , lastClickTime
+
+
+
 def drag(isDragging:bool,firstTip, secondTip, center, draggingThreshold):
     distance = np.linalg.norm(np.array([firstTip.x, firstTip.y]) - np.array([secondTip.x, secondTip.y]))
     if not isDragging:
@@ -110,6 +131,8 @@ leftClicked = False
 rightClicked = False
 shouldClose = False
 
+leftClickClassifier = joblib.load("left_clicker_prediction.joblib")
+
 while cap.isOpened():
     ret, frame = cap.read()
     if not ret: # ret是是否成功接触到帧的bool
@@ -145,6 +168,11 @@ while cap.isOpened():
                 threshould = thresholdCalculation(zeige_wurzel,klein_wurzel)
                 shouldClose = close(daumen_tip,klein_wurzel,threshould)
 
+                # length= distance(zeige_wurzel,klein_wurzel)
+                # palmArea = area(zeige_wurzel,klein_wurzel,palm_wurzel)
+                # leftClickDistance = distance(zeige_tip,daumen_tip)
+                leftclickData = np.array([distance(zeige_wurzel,klein_wurzel),area(zeige_wurzel,klein_wurzel,palm_wurzel),distance(zeige_tip,daumen_tip)]).reshape(1,-1)
+
                 if shouldClose:
                     cap.release()
                     cv2.destroyAllWindows()
@@ -154,8 +182,9 @@ while cap.isOpened():
                 if not isDragging:
                     # 移动 取食指根部位置
                     mouseMovement(mousePosition(palm_wurzel,screen_height,screen_width,screenScaleW,screenScaleH))
-                    leftClicked, left_last_click_time = performClick(leftClicked,left_last_click_time,daumen_tip,zeige_tip,clickForm="L", clickThreshold = threshould,clickInterval = 0.5)
-                    rightClicked, right_last_click_time = performClick(rightClicked,right_last_click_time,daumen_tip,klein_tip,clickForm="R", clickThreshold = threshould,clickInterval = 0.5)
+                    #leftClicked, left_last_click_time = performClick(leftClicked,left_last_click_time,daumen_tip,zeige_tip,clickForm="L", clickThreshold = threshould,clickInterval = 0.5)
+                    leftClicked, left_last_click_time = performClick_Classifier(leftClicked,left_last_click_time,leftclickData,leftClickClassifier,"L",clickInterval=click_interval)
+                    rightClicked, right_last_click_time = performClick(rightClicked,right_last_click_time,daumen_tip,klein_tip,clickForm="R", clickThreshold = threshould,clickInterval = click_interval)
 
     cv2.imshow("Hand Tracking Mouse", frame)
 
