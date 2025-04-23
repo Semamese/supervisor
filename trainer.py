@@ -8,7 +8,7 @@ import pandas as pd
 
 
 if __name__ == '__main__':
-    data = pd.read_csv('left.csv',index_col=0)
+    data = pd.read_csv('right.csv',index_col=0)
     X = data.iloc[:, :-1]
     y = data.iloc[:, -1]
 
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     )
 
     model.fit(X_train, y_train)
-    dump(model, 'left_clicker_prediction.joblib')
+    dump(model, 'right_clicker_prediction.joblib')
     y_pred = model.predict(X_test)
     print(confusion_matrix(y_test, y_pred))
     print(classification_report(y_test, y_pred))

@@ -52,7 +52,7 @@ def sampling(is_clicked:int,sampleCount:int):
                     sample = {"length": distance(hand_landmarks.landmark[5], hand_landmarks.landmark[17]),
                               "area": area(hand_landmarks.landmark[5], hand_landmarks.landmark[17],
                                            hand_landmarks.landmark[0]),
-                              "left_click_distance": distance(hand_landmarks.landmark[8], hand_landmarks.landmark[4]),
+                              "left_click_distance": distance(hand_landmarks.landmark[20], hand_landmarks.landmark[4]),
                               "is_clicked": is_clicked}
                     dataTmp = pd.concat([dataTmp, pd.DataFrame([sample])], ignore_index=True)
                     counts += 1

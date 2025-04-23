@@ -132,6 +132,7 @@ rightClicked = False
 shouldClose = False
 
 leftClickClassifier = joblib.load("left_clicker_prediction.joblib")
+rightClickClassifier = joblib.load("right_clicker_prediction.joblib")
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -172,7 +173,7 @@ while cap.isOpened():
                 # palmArea = area(zeige_wurzel,klein_wurzel,palm_wurzel)
                 # leftClickDistance = distance(zeige_tip,daumen_tip)
                 leftclickData = np.array([distance(zeige_wurzel,klein_wurzel),area(zeige_wurzel,klein_wurzel,palm_wurzel),distance(zeige_tip,daumen_tip)]).reshape(1,-1)
-
+                rightclickData = np.array([distance(zeige_wurzel,klein_wurzel),area(zeige_wurzel,klein_wurzel,palm_wurzel),distance(klein_tip,daumen_tip)]).reshape(1,-1)
                 if shouldClose:
                     cap.release()
                     cv2.destroyAllWindows()
@@ -184,7 +185,10 @@ while cap.isOpened():
                     mouseMovement(mousePosition(palm_wurzel,screen_height,screen_width,screenScaleW,screenScaleH))
                     #leftClicked, left_last_click_time = performClick(leftClicked,left_last_click_time,daumen_tip,zeige_tip,clickForm="L", clickThreshold = threshould,clickInterval = 0.5)
                     leftClicked, left_last_click_time = performClick_Classifier(leftClicked,left_last_click_time,leftclickData,leftClickClassifier,"L",clickInterval=click_interval)
-                    rightClicked, right_last_click_time = performClick(rightClicked,right_last_click_time,daumen_tip,klein_tip,clickForm="R", clickThreshold = threshould,clickInterval = click_interval)
+                    rightClicked, right_last_click_time = performClick_Classifier(rightClicked,right_last_click_time,
+                                                                                rightclickData, rightClickClassifier, "R",
+                                                                                clickInterval=click_interval)
+                    #rightClicked, right_last_click_time = performClick(rightClicked,right_last_click_time,daumen_tip,klein_tip,clickForm="R", clickThreshold = threshould,clickInterval = click_interval)
 
     cv2.imshow("Hand Tracking Mouse", frame)
 
