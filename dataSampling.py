@@ -24,7 +24,7 @@ def countDown(cap,text,countDownTime):
 
 
 
-def sampling(is_clicked:int,sampleCount:int):
+def sampling(is_clicked:int,sampleCount:int,which:str  = "left"):
     dataTmp = pd.DataFrame(columns=['length', 'area', 'left_click_distance', 'is_clicked'])
     counts = 0
     while cap.isOpened():  # 开始循环抽帧
@@ -48,14 +48,23 @@ def sampling(is_clicked:int,sampleCount:int):
                 if label == "Right":  # 右手
                     hand_landmarks = results.multi_hand_landmarks[idx]
                     mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-
-                    sample = {"length": distance(hand_landmarks.landmark[5], hand_landmarks.landmark[17]),
-                              "area": area(hand_landmarks.landmark[5], hand_landmarks.landmark[17],
-                                           hand_landmarks.landmark[0]),
-                              "left_click_distance": distance(hand_landmarks.landmark[20], hand_landmarks.landmark[4]),
-                              "is_clicked": is_clicked}
-                    dataTmp = pd.concat([dataTmp, pd.DataFrame([sample])], ignore_index=True)
-                    counts += 1
+                    if which == "right":
+                        sample = {"length": distance(hand_landmarks.landmark[5], hand_landmarks.landmark[17]),
+                                  "area": area(hand_landmarks.landmark[5], hand_landmarks.landmark[17],
+                                               hand_landmarks.landmark[0]),
+                                  "left_click_distance": distance(hand_landmarks.landmark[8], hand_landmarks.landmark[4]),
+                                  "is_clicked": is_clicked}
+                        dataTmp = pd.concat([dataTmp, pd.DataFrame([sample])], ignore_index=True)
+                        counts += 1
+                    if which == "left":
+                        sample = {"length": distance(hand_landmarks.landmark[5], hand_landmarks.landmark[17]),
+                                  "area": area(hand_landmarks.landmark[5], hand_landmarks.landmark[17],
+                                               hand_landmarks.landmark[0]),
+                                  "left_click_distance": distance(hand_landmarks.landmark[20],
+                                                                  hand_landmarks.landmark[4]),
+                                  "is_clicked": is_clicked}
+                        dataTmp = pd.concat([dataTmp, pd.DataFrame([sample])], ignore_index=True)
+                        counts += 1
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         if counts == sampleCount:
@@ -64,12 +73,17 @@ def sampling(is_clicked:int,sampleCount:int):
 def main():
 
     data = pd.DataFrame(columns=['length','area','left_click_distance','is_clicked'])
-    countDown(cap,"sampling for NOT clicked",3)
 
+
+    # the sampling for unclicked, can be seperated from sampling for some specific movement
+    # comment the following 2 lines if we only want to sample the click
+    countDown(cap, "sampling for NOT clicked", 5)
     data = pd.concat([sampling(0,1000),data],ignore_index=True)
 
+    data.to_csv("Meng_Unclicked")
+
     countDown(cap,"sampling for clicked",3)
-    data = pd.concat([sampling(1,1000),data],ignore_index=True)
+    data = pd.concat([sampling(1,1000,"right"),data],ignore_index=True)
 
     data.to_csv("right.csv")
 
