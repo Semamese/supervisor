@@ -13,6 +13,9 @@ import win32con
 import win32gui
 
 
+import warnings
+warnings.filterwarnings("ignore", message="X does not have valid feature names*")
+
 logging.basicConfig(level=logging.INFO)
 pyautogui.FAILSAFE = False #限制当鼠标坐标超出屏幕时抛出异常
 
@@ -26,8 +29,10 @@ screenScaleH = 1.8
 cap = cv2.VideoCapture(1)
 
 t0 = time.time()
-xFilter = OneEuroFilter(t0=t0, x0=screen_width / 2, min_cutoff=2.0, beta=0.0)
-yFilter = OneEuroFilter(t0=t0, x0=screen_height / 2, min_cutoff=2.0, beta=0.0)
+min_cutoff = 0.005
+beta = 0.1
+xFilter = OneEuroFilter(t0=t0, x0=screen_width / 2, min_cutoff=min_cutoff, beta=beta)
+yFilter = OneEuroFilter(t0=t0, x0=screen_height / 2, min_cutoff=min_cutoff, beta=beta)
 
 def set_window_always_on_top(window_name="Hand Tracking Mouse"):
     hwnd = win32gui.FindWindow(None, window_name)
@@ -138,7 +143,7 @@ while cap.isOpened():
     ret, frame = cap.read()
     if not ret: # ret是是否成功接触到帧的bool
         continue
-    cv2.imshow("Hand Tracking Mouse", frame)
+    #cv2.imshow("Hand Tracking Mouse", frame)
 
     # if not window_set_top:
     #     set_window_always_on_top("Hand Tracking Mouse")
@@ -190,10 +195,10 @@ while cap.isOpened():
                                                                                 clickInterval=click_interval)
                     #rightClicked, right_last_click_time = performClick(rightClicked,right_last_click_time,daumen_tip,klein_tip,clickForm="R", clickThreshold = threshould,clickInterval = click_interval)
 
-    cv2.imshow("Hand Tracking Mouse", frame)
+    #cv2.imshow("Hand Tracking Mouse", frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break
 
 cap.release()
 cv2.destroyAllWindows()
